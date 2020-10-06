@@ -6,6 +6,6 @@ They can be overridden by defining channels in the file `$HOME/.config/radio/url
 The file uses the standard conf syntax.
 
 ## Installation
-* Homebrew: `brew install thezeroalpha/formulae/conf`
+* Homebrew: `brew install thezeroalpha/formulae/radio`
 * Makefile: `make install`
 * Manual: download the `radio` script, make it executable, and put it in your `$PATH`
