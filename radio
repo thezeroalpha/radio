@@ -47,6 +47,7 @@ class Subreddit
 end
 
 class Radio
+  DEFAULT_CONFIG_FILE = '/usr/local/etc/radio/urls'
   CONFIG_FILE = "#{ENV['HOME']}/.config/radio/urls"
   SUBREDDIT_CHANNEL = 'Play from music subreddit'
   def initialize
@@ -54,13 +55,17 @@ class Radio
       warn 'mpv not installed.'
       exit 1
     end
-    unless File.exist? "#{ENV['HOME']}/.config/radio/urls"
+    if File.exist? CONFIG_FILE
+      cfg = CONFIG_FILE
+    elsif File.exist? DEFAULT_CONFIG_FILE
+      cfg = DEFAULT_CONFIG_FILE
+    else
       warn "Please set URLs in #{ENV['HOME']}/.config/radio/urls."
       exit 1
     end
     @channels = {}
-    File.open(CONFIG_FILE, 'r').each do |line|
-      unless line.match?(/^\s*\#/)
+    File.open(cfg, 'r').each do |line|
+      unless line.match?(/^\s*(\#|\s*$)/)
         parts = line.chomp.split(/(?<=")\s+(?=http)/)
         @channels[parts.first.gsub('"', '')] = parts.last
       end
