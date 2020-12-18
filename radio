@@ -22,6 +22,7 @@ class Subreddit
   end
 
   def play
+    # TODO: support mpd with mpc
     mpv_options = '--no-video --volume=50'
     links = []
     @posts.each do |post|
@@ -51,8 +52,12 @@ class Radio
   CONFIG_FILE = "#{ENV['HOME']}/.config/radio/urls"
   SUBREDDIT_CHANNEL = 'Play from music subreddit'
   def initialize
-    unless system('command -v mpv 1>/dev/null 2>&1')
-      warn 'mpv not installed.'
+    if system('command -v mpc 1>/dev/null 2>&1')
+      @player = 'mpc'
+    elsif system('command -v mpv 1>/dev/null 2>&1')
+      @player = 'mpv'
+    else
+      warn 'neither mpc nor mpv installed.'
       exit 1
     end
     if File.exist? CONFIG_FILE
@@ -105,6 +110,16 @@ class Radio
         sub = Subreddit.new(gets.chomp)
       end
       sub.play
+    elsif @player == 'mpc'
+      puts "Loading #{selection} in mpd..."
+      system 'mpc', 'clear'
+      if selection.include? 'somafm.com'
+        system 'mpc', 'load', selection
+        system 'mpc', 'play'
+      else
+        system 'mpc', 'add', selection
+        system 'mpc', 'play'
+      end
     else
       puts "\e[H\e[2J"
       puts "Loading #{selection}..."
