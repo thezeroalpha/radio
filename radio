@@ -1,6 +1,9 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+DEFAULT_CONFIG_FILE = '/usr/local/etc/radio/urls'
+CONFIG_FILE = "#{ENV['HOME']}/.config/radio/urls"
+
 def clear_screen
   puts "\e[H\e[2J"
 end
@@ -19,21 +22,18 @@ end
 
 def choose_from_list(list, names)
   clear_screen
-  user_selection = false
-  begin
-    until user_selection
-      user_selection = get_user_choice(names)
-      puts 'Invalid selection, please try again.' if user_selection && !list[user_selection]
-    end
-
-    list[user_selection]
-  rescue Interrupt
-    nil
+  puts "== Internet Radio Player =="
+  until (user_selection = get_user_choice(names))
+    puts 'Invalid selection, please try again.' if user_selection && !list[user_selection]
   end
+
+  list[user_selection]
 end
 
 # Radio: the base radio class
 class Radio
+  attr_reader :channel
+
   def initialize
     if system('command -v mpc 1>/dev/null 2>&1')
       @player = 'mpc'
@@ -59,6 +59,8 @@ end
 
 # SomaFM radio subclass
 class SomaFM < Radio
+  HOSTNAME = 'somafm.com'
+
   def initialize(selected_channel)
     super()
     @channel = selected_channel[:link]
@@ -66,7 +68,7 @@ class SomaFM < Radio
 
   def play
     if @player == 'mpc'
-      system 'mpc', 'clear'
+      system 'mpc', 'clear', 1 => '/dev/null'
       system('mpc', 'load', @channel)
     end
     super @channel
@@ -82,8 +84,12 @@ class OtherRadio < Radio
 
   def play
     if @player == 'mpc'
-      system 'mpc', 'clear'
-      system 'mpc', 'add', @channel
+      system 'mpc', 'clear', 1 => '/dev/null'
+      if @channel =~ /\.m3u$/
+        system 'mpc', 'load', @channel
+      else
+        system 'mpc', 'add', @channel
+      end
     end
     super @channel
   end
@@ -96,45 +102,50 @@ class RadioGarden < Radio
   require 'cgi'
 
   def initialize(_)
-    retrieved_channels = []
     @base_url = 'https://radio.garden/api'
-    while retrieved_channels.empty?
-      print 'Enter radio search: '
-      query = gets.chomp
-      begin
-        URI.parse("#{@base_url}/search?q=#{CGI.escape query}").open do |response|
-          retrieved_channels = JSON.parse(response.read)['hits']['hits']
-        end
-      rescue OpenURI::HTTPError
-        retrieved_channels = []
-      end
-
-      channels = []
-      retrieved_channels.each do |c|
-        channels << { name: "#{c['_source']['title']} (#{c['_source']['subtitle']})",
-                      id: c['_source']['channelId'] }
-      end
-    end
-
+    puts 'No radio found, please try again.' while (retrieved_channels = search_channels).empty?
+    channels = parse_channels(retrieved_channels)
     selected_channel = choose_from_list(channels, channels.map { |c| c[:name] })
-
-    begin
-      # Will redirect
-      @channel = URI.parse("#{@base_url}/ara/content/listen/#{selected_channel[:id]}/channel.mp3").open(redirect: false)
-    rescue OpenURI::HTTPRedirect => e
-      @channel = e.uri.to_s.gsub(/\?listening-from.*/, '')
-    rescue OpenURI::HTTPError
-      @channel = None
-    end
+    @channel = get_channel_link(selected_channel)
     super()
+  rescue Interrupt
+    @channel = nil
   end
 
   def play
     if @player == 'mpc'
-      system 'mpc', 'clear'
+      system 'mpc', 'clear', 1 => '/dev/null'
       system 'mpc', 'add', @channel
     end
     super @channel
+  end
+
+  private
+
+  def search_channels
+    print 'Enter radio search: '
+    query = gets.chomp
+    URI.parse("#{@base_url}/search?q=#{CGI.escape query}").open do |response|
+      JSON.parse(response.read)['hits']['hits']
+    end
+  rescue OpenURI::HTTPError
+    []
+  end
+
+  def get_channel_link(selected_channel)
+    # Will redirect
+    @channel = URI.parse("#{@base_url}/ara/content/listen/#{selected_channel[:id]}/channel.mp3").open(redirect: false)
+  rescue OpenURI::HTTPRedirect => e
+    @channel = e.uri.to_s.gsub(/\?listening-from.*/, '')
+  rescue OpenURI::HTTPError
+    @channel = None
+  end
+
+  def parse_channels(retrieved_channels)
+    retrieved_channels.inject([]) do |channels, c|
+      channels << { name: "#{c['_source']['title']} (#{c['_source']['subtitle']})",
+                    id: c['_source']['channelId'] }
+    end
   end
 end
 
@@ -145,66 +156,81 @@ class Subreddit < Radio
   require 'shellwords'
 
   def initialize(_)
-    posts = []
-    while posts.empty?
-      print 'Enter subreddit name: '
-      sub = gets.chomp
-      url = "https://www.reddit.com/r/#{sub}/top.json?t=month&limit=100&show=all"
-      begin
-        URI.parse(url).open('User-Agent' => 'ruby/2.7', 'Accept' => 'application/json') do |response|
-          data = JSON.parse(response.read)['data']
-          posts = data['children']
-        end
-      rescue OpenURI::HTTPError
-        posts = []
-      end
-      puts 'Subreddit has no music posts or does not exist.' if posts.empty?
-    end
-    @links = []
-    posts.each do |post|
-      p = post['data']
-      if !p['is_self'] && p['post_hint'] != 'image'
-        @links.append(title: p['title'], url: p['url'], reddit: "https://reddit.com#{p['permalink']}")
-      end
-    end
-
+    puts 'Subreddit has no music posts or does not exist.' while (posts = retrieve_subreddit_posts).empty?
+    @links = extract_post_links(posts)
     super()
+  rescue Interrupt
+    @channel = nil
   end
 
   def play
     puts "Number of tracks: #{@links.length}"
-
     # TODO: support mpd
     system("mpv --vid=no --volume=50 -- #{@links.map { |l| l[:url] }.shelljoin}")
-  rescue Interrupt
-    true
+  end
+
+  private
+
+  def retrieve_subreddit_posts
+    print 'Enter subreddit name: '
+    sub = gets.chomp
+    url = "https://www.reddit.com/r/#{sub}/top.json?t=month&limit=100&show=all"
+    URI.parse(url).open('User-Agent' => 'ruby/2.7', 'Accept' => 'application/json') do |response|
+      @channel = sub
+      JSON.parse(response.read)['data']['children']
+    end
+  rescue OpenURI::HTTPError
+    []
+  end
+
+  def extract_post_links(posts)
+    posts.each_with_object([]) do |post, links|
+      p = post['data']
+      if !p['is_self'] && p['post_hint'] != 'image'
+        links.append(title: p['title'], url: p['url'], reddit: "https://reddit.com#{p['permalink']}")
+      end
+    end
   end
 end
 
+def read_config_file(cfg)
+  channels = []
+  ignore = /^\s*(\#|\s*$)/
+  File.open(cfg, 'r').each do |line|
+    next if line.match?(ignore)
 
-# TODO: read some URLs from config file
-channels = [
-  { name: 'SOMA - Groove Salad (ambient/downtempo)', link: 'https://somafm.com/groovesalad256.pls', radio: SomaFM },
-  { name: 'SOMA - Mission Control (ambient, space)', link: 'https://somafm.com/missioncontrol.pls', radio: SomaFM },
-  { name: 'SOMA - The Trip (prog house/trance)', link: 'https://somafm.com/thetrip.pls', radio: SomaFM },
-  { name: 'SOMA - Beat Blender (deep house, downtempo)', link: 'https://somafm.com/beatblender.pls', radio: SomaFM },
-  { name: 'SOMA - Dub Step', link: 'https://somafm.com/dubstep256.pls', radio: SomaFM },
-  { name: 'SOMA - Defcon', link: 'https://somafm.com/defcon256.pls', radio: SomaFM },
-  { name: 'SOMA - Deep Space (deep ambient electro/experimental)', link: 'https://somafm.com/deepspaceone.pls',
-    radio: SomaFM },
-  { name: 'SOMA - Thistle Radio (Celtic)', link: 'https://somafm.com/thistle.pls', radio: SomaFM },
-  { name: 'SOMA - Fluid (instr. hip hop, liquid trap)', link: 'https://somafm.com/fluid.pls, radio: SomaFM }' },
-  { name: 'Psystation: Classic Goa', link: 'http://hestia2.cdnstream.com/1458_128', radio: OtherRadio },
-  { name: 'Psystation: Prog Psytrance', link: 'http://hestia2.cdnstream.com/1453_128', radio: OtherRadio },
-  { name: 'Nightride FM', link: 'https://nightride.fm/stream/nightride.m4a', radio: OtherRadio },
-  { name: 'Nightwave Plaza', link: 'https://plaza.one/mp3', radio: OtherRadio },
-  { name: '6forty', link: 'http://54.173.171.80:8000/6forty', radio: OtherRadio },
-  { name: 'Fnoob Techno', link: 'http://play.fnoobtechno.com:2199/tunein/fnoobtechno320.pls', radio: OtherRadio },
-  { name: 'RadioGarden', radio: RadioGarden },
-  { name: 'Subreddit', radio: Subreddit }
-]
+    parts = line.chomp.split(/(?<=")\s+(?=http)/)
+    channel = { name: parts.first.gsub('"', ''), link: parts.last }
+    channel[:radio] = (URI.parse(channel[:link]).host == SomaFM::HOSTNAME ? SomaFM : OtherRadio)
+    channels << channel
+  end
 
-selected_channel = choose_from_list(channels, channels.map { |c| c[:name] })
-exit 0 if selected_channel.nil?
-radio = selected_channel[:radio].new(selected_channel)
-radio.play
+  channels
+end
+
+def load_channels_from_config
+  if File.exist? CONFIG_FILE
+    cfg = CONFIG_FILE
+  elsif File.exist? DEFAULT_CONFIG_FILE
+    cfg = DEFAULT_CONFIG_FILE
+  else
+    warn "Please set URLs in #{ENV['HOME']}/.config/radio/urls."
+    exit 1
+  end
+  read_config_file(cfg)
+end
+
+channels = load_channels_from_config + [{ name: 'RadioGarden', radio: RadioGarden },
+                                        { name: 'Subreddit', radio: Subreddit }]
+
+begin
+  radio = nil
+  loop do
+    selected_channel = choose_from_list(channels, channels.map { |c| c[:name] }) while selected_channel.nil?
+    radio = selected_channel[:radio].new(selected_channel)
+    break unless selected_channel.nil? || radio.channel.nil?
+  end
+  radio.play
+rescue Interrupt
+  exit 0
+end
