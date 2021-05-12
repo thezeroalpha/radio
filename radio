@@ -101,7 +101,7 @@ class SoundsOfEarth < Radio
   require 'open-uri'
 
   def initialize(_)
-    channels = get_channels
+    channels = retrieve_channels
     @channel = choose_from_list(channels.map { |c| c[:link] }, channels.map { |c| c[:name] }) while @channel.nil?
     super()
   rescue Interrupt
