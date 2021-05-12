@@ -12,7 +12,7 @@ def get_user_choice(list)
   list.each_with_index do |elem, i|
     puts "#{i + 1}: #{elem}"
   end
-  print 'Enter number or press ^C to exit> '
+  print 'Enter number or press ^C to go back> '
   begin
     (Integer(gets) - 1)
   rescue StandardError
@@ -22,7 +22,7 @@ end
 
 def choose_from_list(list, names)
   clear_screen
-  puts "== Internet Radio Player =="
+  puts '== Internet Radio Player =='
   until (user_selection = get_user_choice(names))
     puts 'Invalid selection, please try again.' if user_selection && !list[user_selection]
   end
@@ -45,7 +45,7 @@ class Radio
     end
   end
 
-  # Queuing handled by subclass
+  # Adding stream to mpc is handled by subclass, because add/load might vary depending on stream
   def play(stream)
     if @player == 'mpc'
       system 'mpc', 'play'
@@ -95,6 +95,39 @@ class OtherRadio < Radio
   end
 end
 
+# Sounds of Earth
+class SoundsOfEarth < Radio
+  require 'json'
+  require 'open-uri'
+
+  def initialize(_)
+    channels = get_channels
+    @channel = choose_from_list(channels.map { |c| c[:link] }, channels.map { |c| c[:name] }) while @channel.nil?
+    super()
+  rescue Interrupt
+    @channel = nil
+  end
+
+  def play
+    if @player == 'mpc'
+      system 'mpc', 'clear', 1 => '/dev/null'
+      system 'mpc', 'add', @channel
+    end
+    super @channel
+  end
+
+  private
+
+  def retrieve_channels
+    URI('https://soundsofearth.eco/regions.json').open do |response|
+      streams = JSON.parse(response.read)['results']
+      streams.map { |stream| { name: "#{stream['name']} (#{stream['description']})", link: stream['sound'] } }
+    end
+  rescue OpenURI::HTTPError
+    []
+  end
+end
+
 # RadioGarden global radios
 class RadioGarden < Radio
   require 'json'
@@ -105,7 +138,7 @@ class RadioGarden < Radio
     @base_url = 'https://radio.garden/api'
     puts 'No radio found, please try again.' while (retrieved_channels = search_channels).empty?
     channels = parse_channels(retrieved_channels)
-    selected_channel = choose_from_list(channels, channels.map { |c| c[:name] })
+    selected_channel = choose_from_list(channels, channels.map { |c| c[:name] }) while selected_channel.nil?
     @channel = get_channel_link(selected_channel)
     super()
   rescue Interrupt
@@ -221,6 +254,7 @@ def load_channels_from_config
 end
 
 channels = load_channels_from_config + [{ name: 'RadioGarden', radio: RadioGarden },
+                                        { name: 'Sounds of Earth', radio: SoundsOfEarth },
                                         { name: 'Subreddit', radio: Subreddit }]
 
 begin
