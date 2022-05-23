@@ -1,20 +1,27 @@
-"Nightride FM" https://nightride.fm/stream/nightride.m4a
-"Nightwave Plaza" https://plaza.one/mp3
-"6forty" http://54.173.171.80:8000/6forty
-"Fnoob Techno" http://play.fnoobtechno.com:2199/tunein/fnoobtechno320.pls
-"65daysofstatic - Wreckage Systems" https://wreckage-systems.club/radio/8000/stream192.mp3
+"Nightride FM (https://nightride.fm)" https://nightride.fm/stream/nightride.m4a
+"Nightwave Plaza (https://plaza.one)" https://plaza.one/mp3
+"6forty (https://6fortyradio.com)" http://54.173.171.80:8000/6forty
+"Fnoob Techno (https://fnoobtechno.com)" http://play.fnoobtechno.com:2199/tunein/fnoobtechno320.pls
+"65daysofstatic - Wreckage Systems (https://65daysofstatic.com)" https://wreckage-systems.club/radio/8000/stream192.mp3
 
 # Psystation
-"Psystation: Classic Goa" http://hestia2.cdnstream.com/1458_128
-"Psystation: Prog Psytrance" http://hestia2.cdnstream.com/1453_128
+"Psystation: Classic Goa (https://www.psystation.com/)" http://hestia2.cdnstream.com/1458_128
+"Psystation: Prog Psytrance (https://www.psystation.com/)" http://hestia2.cdnstream.com/1453_128
 
 # Soma FM
-"SOMA - Groove Salad (ambient/downtempo)" https://somafm.com/groovesalad256.pls
-"SOMA - Mission Control (ambient, space)" https://somafm.com/missioncontrol.pls
-"SOMA - The Trip (prog house/trance)" https://somafm.com/thetrip.pls
-"SOMA - Beat Blender (deep house, downtempo)" https://somafm.com/beatblender.pls
-"SOMA - Dub Step" https://somafm.com/dubstep256.pls
-"SOMA - Defcon" https://somafm.com/defcon256.pls
-"SOMA - Deep Space (deep ambient electro/experimental)" https://somafm.com/deepspaceone.pls
-"SOMA - Thistle Radio (Celtic)" https://somafm.com/thistle.pls
-"SOMA - Fluid (instr. hip hop, liquid trap)" https://somafm.com/fluid.pls
+"SOMA - Groove Salad (ambient/downtempo) (https://somafm.com/)" https://somafm.com/groovesalad256.pls
+"SOMA - Mission Control (ambient, space) (https://somafm.com/)" https://somafm.com/missioncontrol.pls
+"SOMA - The Trip (prog house/trance) (https://somafm.com/)" https://somafm.com/thetrip.pls
+"SOMA - Beat Blender (deep house, downtempo) (https://somafm.com/)" https://somafm.com/beatblender.pls
+"SOMA - Dub Step (https://somafm.com/)" https://somafm.com/dubstep256.pls
+"SOMA - Defcon (https://somafm.com/)" https://somafm.com/defcon256.pls
+"SOMA - Deep Space (deep ambient electro/experimental) (https://somafm.com/)" https://somafm.com/deepspaceone.pls
+"SOMA - Thistle Radio (Celtic) (https://somafm.com/)" https://somafm.com/thistle.pls
+"SOMA - Fluid (instr. hip hop, liquid trap) (https://somafm.com/)" https://somafm.com/fluid.pls
+
+# Echoes of blue mars
+"Bluemars (http://echoesofbluemars.org/)" http://streams.echoesofbluemars.org:8000/bluemars.m3u
+"Cryosleep (http://echoesofbluemars.org/)" http://streams.echoesofbluemars.org:8000/cryosleep.m3u
+"Voices From Within (http://echoesofbluemars.org/)" http://streams.echoesofbluemars.org:8000/voicesfromwithin.m3u
+
+"Lofi Girl (https://www.youtube.com/c/LofiGirl)" https://www.youtube.com/watch?v=5qap5aO4i9A
