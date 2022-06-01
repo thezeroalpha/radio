@@ -3,6 +3,8 @@
 "6forty (https://6fortyradio.com)" http://54.173.171.80:8000/6forty
 "Fnoob Techno (https://fnoobtechno.com)" http://play.fnoobtechno.com:2199/tunein/fnoobtechno320.pls
 "65daysofstatic - Wreckage Systems (https://65daysofstatic.com)" https://wreckage-systems.club/radio/8000/stream192.mp3
+"WFMU (https://wfmu.org/)" https://wfmu.org/wfmu.pls
+"Vintage Obscura (https://vintageobscura.net/)" https://radio.vintageobscura.net/stream
 
 # Psystation
 "Psystation: Classic Goa (https://www.psystation.com/)" http://hestia2.cdnstream.com/1458_128
@@ -23,6 +25,3 @@
 "Bluemars (http://echoesofbluemars.org/)" http://streams.echoesofbluemars.org:8000/bluemars.m3u
 "Cryosleep (http://echoesofbluemars.org/)" http://streams.echoesofbluemars.org:8000/cryosleep.m3u
 "Voices From Within (http://echoesofbluemars.org/)" http://streams.echoesofbluemars.org:8000/voicesfromwithin.m3u
-
-# WFMU
-"WFMU (https://wfmu.org/)" https://wfmu.org/wfmu.pls
