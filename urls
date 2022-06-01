@@ -23,3 +23,6 @@
 "Bluemars (http://echoesofbluemars.org/)" http://streams.echoesofbluemars.org:8000/bluemars.m3u
 "Cryosleep (http://echoesofbluemars.org/)" http://streams.echoesofbluemars.org:8000/cryosleep.m3u
 "Voices From Within (http://echoesofbluemars.org/)" http://streams.echoesofbluemars.org:8000/voicesfromwithin.m3u
+
+# WFMU
+"WFMU (https://wfmu.org/)" https://wfmu.org/wfmu.pls

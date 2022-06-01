@@ -57,6 +57,22 @@ class Radio
   end
 end
 
+class WFMU < Radio
+  HOSTNAME = 'wfmu.org'
+  def initialize(selected_channel)
+    super()
+    @channel = selected_channel[:link]
+  end
+
+  def play
+    if @player == 'mpc'
+      system 'mpc', 'clear', 1 => '/dev/null'
+      system 'mpc', 'load', @channel
+    end
+    super @channel
+  end
+end
+
 # SomaFM radio subclass
 class SomaFM < Radio
   HOSTNAME = 'somafm.com'
@@ -234,7 +250,14 @@ def read_config_file(cfg)
 
     parts = line.chomp.split(/(?<=")\s+(?=http)/)
     channel = { name: parts.first.gsub('"', ''), link: parts.last }
-    channel[:radio] = (URI.parse(channel[:link]).host == SomaFM::HOSTNAME ? SomaFM : OtherRadio)
+    case URI.parse(channel[:link]).host
+    when SomaFM::HOSTNAME
+      channel[:radio] = SomaFM
+    when WFMU::HOSTNAME
+      channel[:radio] = WFMU
+    else
+      channel[:radio] = OtherRadio
+    end
     channels << channel
   end
 
